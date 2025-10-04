@@ -5,7 +5,7 @@ from rest_framework import status, generics
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.hashers import check_password
 from .models import CustomUser, Company
-from .serializers import LoginSerializer, CompanySerializer
+from .serializers import LoginSerializer, CompanySerializer,UserSerializer
 
 class LoginView(APIView):
     def post(self, request):
@@ -40,38 +40,45 @@ class CompanySignupView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         name = request.data.get('name')
         country = request.data.get('country')
-
+        currency = request.data.get('currency') 
         if not name or not country:
             return Response({"error": "Company name and country are required."},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        # Fetch country details
-        try:
-            response = requests.get("https://restcountries.com/v3.1/all?fields=name,currencies")
-            response.raise_for_status()
-            countries = response.json()
-        except Exception as e:
-            return Response({"error": f"Failed to fetch countries: {str(e)}"},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        currency_code = None
-        for c in countries:
-            if c.get("name", {}).get("common", "").lower() == country.lower():
-                currencies = c.get("currencies", {})
-                if currencies:
-                    currency_code = list(currencies.keys())[0]
-                break
-
-        if not currency_code:
-            return Response({"error": "Invalid country name or country not found."},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-
+    
         company = Company.objects.create(
             name=name,
             country=country,
-            currency=currency_code
+            currency=currency
         )
 
         serializer = CompanySerializer(company)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+class UserSignupView(generics.CreateAPIView):
+    queryset = Company.objects.all()
+    serializer_class = UserSerializer
+
+    def create(self, request, *args, **kwargs):
+        name = request.data.get('name')
+        email = request.data.get('email')
+        password = request.data.get('password') 
+        contactNo = request.data.get('contactNo')
+        companyId = request.data.get('companyId')
+
+        if not name or not email or not password or not contactNo or not companyId:
+            return Response({"error": "Company name and country are required."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+    
+        user = CustomUser.objects.create(
+            name=name,
+            email=email,
+            password=password,
+            contactNo=contactNo,
+            companyId=companyId,
+            role='Admin'
+        )
+
+        serializer = UserSerializer(user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
