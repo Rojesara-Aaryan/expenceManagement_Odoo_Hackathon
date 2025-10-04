@@ -5,7 +5,8 @@ import uuid
 class Company(models.Model):
     companyId = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
-    currency = models.CharField(max_length=3)  # e.g., 'USD'
+    currency = models.CharField(max_length=3)  
+    country = models.CharField(max_length=30)
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.BooleanField(default=True)
     isDelete = models.BooleanField(default=False)
