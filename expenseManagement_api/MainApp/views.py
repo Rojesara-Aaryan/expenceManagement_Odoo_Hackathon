@@ -18,7 +18,7 @@ class LoginView(APIView):
 
         try:
             user = CustomUser.objects.get(email=email, status=True, isDelete=False)
-            if check_password(password, user.password):  # Handles hashed password verification
+            if check_password(password, user.password):
                 token, created = Token.objects.get_or_create(user=user)
                 return Response({
                     'token': token.key,
@@ -36,16 +36,16 @@ class LoginView(APIView):
 class CompanySignupView(generics.CreateAPIView):
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
-    permission_classes = [AllowAny]  # Allow unauthenticated access
 
     def create(self, request, *args, **kwargs):
         name = request.data.get('name')
         country = request.data.get('country')
         currency = request.data.get('currency') 
-        if not name or not country or not currency:
+        if not name or not country:
             return Response({"error": "Company name and country are required."},
                             status=status.HTTP_400_BAD_REQUEST)
 
+    
         company = Company.objects.create(
             name=name,
             country=country,
@@ -54,11 +54,10 @@ class CompanySignupView(generics.CreateAPIView):
 
         serializer = CompanySerializer(company)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
+    
 class UserSignupView(generics.CreateAPIView):
-    queryset = CustomUser.objects.all()  # Fix: Use CustomUser instead of Company
+    queryset = Company.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [AllowAny]  # Allow unauthenticated access
 
     def create(self, request, *args, **kwargs):
         name = request.data.get('name')
@@ -68,14 +67,14 @@ class UserSignupView(generics.CreateAPIView):
         companyId = request.data.get('companyId')
 
         if not name or not email or not password or not contactNo or not companyId:
-            return Response({"error": "All fields are required."},
+            return Response({"error": "Company name and country are required."},
                             status=status.HTTP_400_BAD_REQUEST)
-        
-        company = Company.objects.get(companyId=companyId)
+
+    
         user = CustomUser.objects.create(
             name=name,
             email=email,
-            password=password,  # Note: Password should be hashed (see below)
+            password=password,
             contactNo=contactNo,
             companyId=companyId,
             role='Admin'
@@ -83,27 +82,3 @@ class UserSignupView(generics.CreateAPIView):
 
         serializer = UserSerializer(user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def login_view(request):
-    serializer = LoginSerializer(data=request.data)
-    if serializer.is_valid():
-        email = serializer.validated_data['email']
-        password = serializer.validated_data['password']
-        
-        user = authenticate(request=request, email=email, password=password)
-        
-        if user:
-            token, created = Token.objects.get_or_create(user=user)
-            return Response({
-                'token': token.key,
-                'user_id': str(user.userId),
-                'username': user.username
-            }, status=status.HTTP_200_OK)
-        else:
-            return Response({
-                'error': 'Invalid credentials'
-            }, status=status.HTTP_401_UNAUTHORIZED)
-    
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
