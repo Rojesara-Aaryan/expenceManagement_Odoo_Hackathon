@@ -18,7 +18,7 @@ class LoginView(APIView):
 
         try:
             user = CustomUser.objects.get(email=email, status=True, isDelete=False)
-            if check_password(password, user.password):  # Handles hashed password verification
+            if check_password(password, user.password):
                 token, created = Token.objects.get_or_create(user=user)
                 return Response({
                     'token': token.key,
