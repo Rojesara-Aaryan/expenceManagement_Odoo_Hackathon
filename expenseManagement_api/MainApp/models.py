@@ -17,7 +17,6 @@ class Company(models.Model):
 class CustomUser(AbstractUser):
     userId = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(max_length=100, unique=True)
-    password = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
     contactNo = models.CharField(max_length=15)
     companyId = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='users')
@@ -30,7 +29,6 @@ class CustomUser(AbstractUser):
     status = models.BooleanField(default=True)
     isDelete = models.BooleanField(default=False)
 
-    # Fix reverse accessor clashes
     groups = models.ManyToManyField(
         'auth.Group',
         related_name='customuser_groups',
@@ -46,9 +44,12 @@ class CustomUser(AbstractUser):
         verbose_name='user permissions',
     )
 
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'name', 'contactNo']
+
     def __str__(self):
         return self.username
-
+    
 class ExpenseCategory(models.Model):
     categoryId = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
